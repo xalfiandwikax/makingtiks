@@ -5,10 +5,14 @@ import Footer from "./component/Footer";
 export default function App() {
   return (
     <div className="font-sans">
-      <Eventhero />
+      <Eventhero
+        title="TASTE THE DIRT TOUR"
+        presenter="Making Gigs"
+        posterUrl="../makingtiks.png"
+      />
       <Tiketcard />
       <CTA />
-      <Footer/>
+      <Footer />
     </div>
   );
 }

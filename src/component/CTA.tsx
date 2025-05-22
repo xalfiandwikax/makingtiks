@@ -1,53 +1,105 @@
+import { useState, useEffect } from 'react';
+
+// Deklarasi type untuk window.snap
+declare global {
+  interface Window {
+    snap: {
+      pay: (snapToken: string) => void;
+    };
+  }
+}
+
 export default function CTA() {
-   const cities = [
-    "Jakarta",
-    "Bandung",
-    "Tangerang",
-    "Bekasi",
-    "Depok"
-  ];
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    quantity: 1
+  });
+
+  // 1. Load Midtrans Script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
+    script.setAttribute('data-client-key', 'SB_CLIENT_KEY_ANDA'); // Ganti dengan key Anda
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // 2. Handle Pembayaran
+  const handlePay = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Kirim data ke backend
+    const res = await fetch('/api/create-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...form,
+        amount: 25000 * form.quantity // Hitung total
+      })
+    });
+
+    const { snapToken } = await res.json();
+
+    // Buka popup Midtrans
+    window.snap.pay(snapToken);
+  };
 
   return (
-    <section className="py-12 bg-white">
-      <div className="container mx-auto px-4 max-w-md">
-        <h2 className="text-3xl font-bold mb-8 text-center">🛒 Beli Tiket Sekarang!</h2>
-        
-        <form className="space-y-4">
-          <div>
-            <label className="block text-gray-700 mb-2">Nama Lengkap</label>
-            <input 
-              type="text" 
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-              placeholder="Masukkan nama"
-            />
-          </div>
+    <div className="max-w-md mx-auto p-4 bg-gray-100 rounded-lg">
+      <h2 className="text-2xl font-bold mb-4">Beli Tiket</h2>
+      
+      <form onSubmit={handlePay} className="space-y-3">
+        <input
+          type="text"
+          placeholder="Nama Lengkap"
+          value={form.name}
+          onChange={(e) => setForm({...form, name: e.target.value})}
+          className="w-full p-2 border rounded"
+          required
+        />
 
-          <div>
-            <label className="block text-gray-700 mb-2">Email</label>
-            <input 
-              type="email" 
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600"
-              placeholder="email@contoh.com"
-            />
-          </div>
+        <input
+          type="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={(e) => setForm({...form, email: e.target.value})}
+          className="w-full p-2 border rounded"
+          required
+        />
 
-          <div>
-            <label className="block text-gray-700 mb-2">Pilih Kota</label>
-            <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600">
-              {cities.map((city) => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
-          </div>
+        <input
+          type="tel"
+          placeholder="Nomor HP"
+          value={form.phone}
+          onChange={(e) => setForm({...form, phone: e.target.value})}
+          className="w-full p-2 border rounded"
+          required
+        />
 
-          <button 
-            type="submit" 
-            className="w-full bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition-colors"
-          >
-            Pesan Tiket
-          </button>
-        </form>
-      </div>
-    </section>
+        <input
+          type="number"
+          placeholder="Jumlah Tiket"
+          min="1"
+          max="5"
+          value={form.quantity}
+          onChange={(e) => setForm({...form, quantity: +e.target.value})}
+          className="w-full p-2 border rounded"
+          required
+        />
+
+        <button 
+          type="submit" 
+          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+        >
+          Bayar dengan Midtrans
+        </button>
+      </form>
+    </div>
   );
 }
