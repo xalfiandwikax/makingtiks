@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 
-// Deklarasi type untuk window.snap
 declare global {
   interface Window {
     snap: {
@@ -21,7 +20,7 @@ export default function CTA() {
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
-    script.setAttribute('data-client-key', 'SB_CLIENT_KEY_ANDA'); // Ganti dengan key Anda
+    script.setAttribute('data-client-key', 'SB-Mid-client-VraUPqaaigMsmheG'); // Ganti dengan client key Anda
     script.async = true;
     document.body.appendChild(script);
 
@@ -34,20 +33,39 @@ export default function CTA() {
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Kirim data ke backend
-    const res = await fetch('/api/create-payment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        amount: 25000 * form.quantity // Hitung total
-      })
-    });
+    try {
+      const res = await fetch('http://localhost:5000/api/payment/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerDetails: {
+            first_name: form.name,
+            email: form.email,
+            phone: form.phone
+          },
+          itemDetails: [
+            {
+              id: 'TICKET1',
+              name: 'Tiket Event',
+              price: 100000,
+              quantity: form.quantity
+            }
+          ]
+        })
+      });
 
-    const { snapToken } = await res.json();
+      const data = await res.json();
 
-    // Buka popup Midtrans
-    window.snap.pay(snapToken);
+      if (data.success && data.token) {
+        window.snap.pay(data.token);
+      } else {
+        alert('Gagal memproses pembayaran');
+        console.error('Midtrans error:', data);
+      }
+    } catch (error) {
+      alert('Terjadi kesalahan!');
+      console.error('Fetch error:', error);
+    }
   };
 
   return (
